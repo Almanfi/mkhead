@@ -1,0 +1,65 @@
+#!/bin/bash
+
+
+NO_C=$((`echo $1 | wc -c` - 2))
+
+H_FILE=`echo $1 | cut -b -${NO_C}`
+
+H_FILE+="h"
+
+NAME=`echo ${H_FILE^^} | tr '.' '_'`
+
+OLD="${H_FILE}.old"
+
+cp $H_FILE "${H_FILE}.old"
+
+HEADERS=`find . -name "*.h" ! -regex './[a-z|_]*.h'`
+
+LIBS="limits.h stdarg.h stdio.h"
+
+
+CFILES=`echo $@ |tr " " "\n" | sort -u -r`
+
+DEFS=`grep -P "^(#.define)" $OLD | tail -n+2`
+
+TYPS=`grep -P "^(typedef)|^([\}\{])|^(\t)" $OLD`
+
+echo "" > $H_FILE
+
+echo -e "#ifndef $NAME\n# define $NAME\n" >> $H_FILE
+
+IFS=$'\n'
+for DEF in $DEFS
+do
+	echo -e "$DEF\n" >> $H_FILE
+done
+
+for HEADER in $HEADERS
+do
+	echo "# include \"$HEADER\"" >> $H_FILE
+done
+
+IFS=$' '
+for LIB in $LIBS
+do
+	echo "# include <$LIB>" >> $H_FILE
+done
+echo "" >> $H_FILE
+
+IFS=$'\n'
+for TYP in $TYPS
+do
+	echo -e "$TYP" >> $H_FILE
+done
+echo "" >> $H_FILE
+
+
+IFS=$'\n'
+for FILE in $CFILES
+do
+	echo "// ---- ${FILE}" >> $H_FILE
+	grep ")$" $FILE | grep "^\w" | grep -vG 'int[ \t]*main' | sed -r 's/[\t ]/\t/' | awk '{print $0";"}' >> $H_FILE
+	echo "" >> $H_FILE
+done
+
+echo -e "#endif // ${NAME}" >> $H_FILE
