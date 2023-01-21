@@ -12,7 +12,7 @@ OLD="${H_FILE}.old"
 
 cp $H_FILE "${H_FILE}.old"
 
-HEADERS=`find . -name "*.h" ! -regex './[a-z|_]*.h'`
+HEADERS=`find . -name "*.h" ! -regex './[a-z|_| ]*.h'`
 
 LIBS="limits.h stdarg.h stdio.h"
 
